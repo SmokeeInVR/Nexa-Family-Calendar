@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Family Command Center</title>
+<title>Nexa-Calendar</title>
 <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -225,7 +225,7 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 <!-- API KEY MODAL -->
 <div id="keyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1000;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#141414;border:1px solid #2a2a2a;border-top:2px solid #D4A53E;border-radius:12px;padding:26px;max-width:380px;width:100%;">
-    <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:#D4A53E;letter-spacing:2px;margin-bottom:4px;">Family Command Center</div>
+    <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:#D4A53E;letter-spacing:2px;margin-bottom:4px;">Nexa-Calendar</div>
     <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:#999;margin-bottom:18px;line-height:1.6;">Enter your Anthropic API key to activate the AI assistant. Saved in your browser — enter once, works forever.</div>
     <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:rgba(0,0,0,0.5);border:1px solid #2a2a2a;border-radius:6px;padding:10px 12px;color:#fff;font-family:'DM Mono',monospace;font-size:12px;outline:none;margin-bottom:8px;box-sizing:border-box;">
     <div id="keyErr" style="display:none;font-size:11px;color:#ef4444;margin-bottom:8px;">⚠ Invalid key format — must start with sk-</div>
@@ -246,7 +246,7 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 <!-- WALL MODE -->
 <div class="wall-mode" id="wallMode">
   <div class="wall-header">
-    <div class="wall-title">Family Command Center</div>
+    <div class="wall-title">Nexa-Calendar</div>
     <div style="display:flex;align-items:center;gap:20px;">
       <div>
         <div class="wall-clock-big" id="wallClock">--:--</div>
@@ -290,7 +290,7 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 <!-- APP -->
 <div class="app">
   <div class="header">
-    <div class="header-title">Family Command Center</div>
+    <div class="header-title">Nexa-Calendar</div>
     <div class="header-right">
       <button onclick="showKeyModal()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-dim);font-size:11px;cursor:pointer;margin-right:4px;">🔑 API Key</button><button class="wall-btn" onclick="toggleWallMode()">🖥 Wall Mode</button>
       <div style="position:relative;" id="notifWrap">
@@ -369,33 +369,109 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
   <!-- BABY PANEL -->
   <div class="panel" id="panel-baby">
     <div class="scroll">
-      <div style="padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:12px;">
-        <div style="font-family:'Lora',serif;font-size:22px;font-weight:700;" id="babyName">Lily</div>
-        <div style="font-size:14px;color:var(--purple);" id="babyAge"></div>
+      <!-- HEADER -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:14px;">
+        <div>
+          <div style="font-family:'Lora',serif;font-size:22px;font-weight:700;color:#fff;" id="babyName">Lily</div>
+          <div style="font-size:14px;color:var(--purple);" id="babyAge"></div>
+        </div>
+        <div id="lastFedBadge" style="text-align:right;font-size:11px;color:var(--text-dim);font-family:'Lora',serif;"></div>
       </div>
+
+      <!-- QUICK STATS ROW -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;" id="babyStatsRow"></div>
+
+      <!-- FEEDING -->
+      <div class="section-h">🍼 Feeding Log</div>
+      <div id="feedingQuickBtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+      <div id="feedingLogList" style="margin-bottom:6px;"></div>
+      <button onclick="openFeedingDialog()" style="width:100%;padding:9px;background:none;border:1px dashed var(--border);border-radius:8px;color:var(--text-dim);font-size:13px;cursor:pointer;font-family:'Lora',serif;">+ Log Feeding</button>
+      <div class="divider"></div>
+
       <!-- NAP -->
       <div class="section-h">⏰ Nap Tracker</div>
-      <div id="napAlertBox" style="display:none;padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid var(--amber);border-radius:7px;color:var(--amber);font-family:'Lora',serif;font-size:13px;margin-bottom:10px;">Nap Alert: Baby has been sleeping for over 2 hours!</div>
+      <div id="napAlertBox" style="display:none;padding:10px 14px;background:rgba(245,158,11,0.1);border:1px solid var(--amber);border-radius:7px;color:var(--amber);font-family:'Lora',serif;font-size:13px;margin-bottom:10px;">⚠ Baby has been sleeping for over 2 hours!</div>
       <div id="napSection"></div>
       <div id="napLog" style="margin-bottom:12px;"></div>
       <div class="divider"></div>
+
+      <!-- DAILY ROUTINE -->
+      <div class="section-h">✅ Daily Routine</div>
+      <div id="babyRoutineList" style="margin-bottom:12px;"></div>
+      <div class="divider"></div>
+
       <!-- MOOD -->
-      <div class="section-h">😊 Mood Logger</div>
+      <div class="section-h">😊 Mood</div>
       <div class="mood-grid" id="moodBtns"></div>
       <div id="moodLog" style="margin-bottom:12px;"></div>
       <div class="divider"></div>
+
+      <!-- MEDICINE -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-h" style="margin:0;">💊 Medicine & Vitamins</div>
+        <button onclick="openMedDialog()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--text-dim);font-size:11px;cursor:pointer;">+ Log</button>
+      </div>
+      <div id="medicineLogList" style="margin-bottom:12px;"></div>
+      <div class="divider"></div>
+
+      <!-- MILESTONES -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-h" style="margin:0;">🌟 Milestones</div>
+      </div>
+      <div id="milestoneGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
+      <div class="divider"></div>
+
       <!-- NOTES -->
       <div class="section-h">📓 Daily Notes</div>
-      <textarea class="note-input" id="babyNoteInput" placeholder="New foods tried, milestones, funny moments..."></textarea>
+      <textarea class="note-input" id="babyNoteInput" placeholder="New foods tried, funny moments, observations..."></textarea>
       <button class="save-btn" onclick="saveBabyNote()">Save Note</button>
       <div id="babyNotesList" style="margin-top:12px;"></div>
       <div class="divider"></div>
+
       <!-- DEV TIPS -->
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <div class="section-h" style="margin:0;">👶 Developmental Tips · <span id="babyAgeLabel"></span></div>
         <button class="refresh-btn" onclick="loadDevTips()">↻ Refresh</button>
       </div>
       <div id="devTipsSection"><div style="font-family:'Lora',serif;font-size:13px;color:var(--text-dim);padding:12px 0;">Tap refresh to get activity suggestions</div></div>
+    </div>
+  </div>
+
+  <!-- FEEDING DIALOG -->
+  <div class="dialog-overlay" id="feedingDialog">
+    <div class="dialog-sheet">
+      <div class="dialog-title">Log Feeding</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">What did she eat?</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;" id="foodTypeBtns">
+        <button class="footer-btn" onclick="selectFoodType(this,'Breast Milk')" data-type="Breast Milk">🤱 Breast Milk</button>
+        <button class="footer-btn" onclick="selectFoodType(this,'Formula')" data-type="Formula">🍼 Formula</button>
+        <button class="footer-btn" onclick="selectFoodType(this,'Oatmeal')" data-type="Oatmeal">🥣 Oatmeal</button>
+        <button class="footer-btn" onclick="selectFoodType(this,'Puree')" data-type="Puree">🥕 Puree</button>
+        <button class="footer-btn" onclick="selectFoodType(this,'Solids')" data-type="Solids">🍗 Solids</button>
+        <button class="footer-btn" onclick="selectFoodType(this,'Snack')" data-type="Snack">🍌 Snack</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Amount / Notes (optional)</div>
+      <input class="form-input" id="feedingAmount" placeholder="e.g. 4oz, half jar, 10 min nursing">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Specific food (optional)</div>
+      <input class="form-input" id="feedingFood" placeholder="e.g. sweet potato puree, banana">
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeDialog('feedingDialog')">Cancel</button>
+        <button class="btn-primary" onclick="saveFeeding()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEDICINE DIALOG -->
+  <div class="dialog-overlay" id="medDialog">
+    <div class="dialog-sheet">
+      <div class="dialog-title">Log Medicine / Vitamin</div>
+      <input class="form-input" id="medName" placeholder="Medicine or vitamin name">
+      <input class="form-input" id="medDose" placeholder="Dose (e.g. 0.5ml, 1 drop)">
+      <input class="form-input" id="medNotes" placeholder="Notes (optional)">
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeDialog('medDialog')">Cancel</button>
+        <button class="btn-primary" onclick="saveMedicine()">Save</button>
+      </div>
     </div>
   </div>
 
@@ -643,6 +719,34 @@ let chatMessages = ls('chat_messages')||[];
 let dinner = ls('tonights_dinner')||'';
 let activeSender = ls('active_sender')||'husband';
 let babySettings = ls('baby_settings')||{name:'Lily',birthdate:'2025-03-05'};
+let feedingLog = ls('feeding_log')||[];
+let medicineLog = ls('medicine_log')||[];
+let milestones = ls('milestones')||[];
+let babyRoutine = ls('baby_routine')||{};
+const BABY_ROUTINE_TASKS = [
+  {id:'diaper_morning',label:'Morning Diaper',icon:'🩲',time:'7:00 AM'},
+  {id:'tummy_time',label:'Tummy Time',icon:'🤸',time:'10:00 AM'},
+  {id:'diaper_midday',label:'Midday Diaper',icon:'🩲',time:'12:00 PM'},
+  {id:'bath',label:'Bath Time',icon:'🛁',time:'6:00 PM'},
+  {id:'diaper_night',label:'Night Diaper',icon:'🩲',time:'7:30 PM'},
+  {id:'teeth',label:'Brush Teeth',icon:'🦷',time:'7:30 PM'},
+  {id:'vitamin',label:'Vitamin D Drops',icon:'💊',time:'8:00 AM'},
+];
+const MILESTONE_LIST = [
+  {id:'first_smile',label:'First Smile',icon:'😊'},
+  {id:'first_laugh',label:'First Laugh',icon:'😂'},
+  {id:'rolls_over',label:'Rolls Over',icon:'🔄'},
+  {id:'sits_up',label:'Sits Up Alone',icon:'🪑'},
+  {id:'first_tooth',label:'First Tooth',icon:'🦷'},
+  {id:'first_word',label:'First Word',icon:'💬'},
+  {id:'first_steps',label:'First Steps',icon:'👣'},
+  {id:'waves',label:'Waves Bye-Bye',icon:'👋'},
+  {id:'claps',label:'Claps Hands',icon:'👏'},
+  {id:'crawls',label:'Crawls',icon:'🤸'},
+  {id:'pulls_up',label:'Pulls to Stand',icon:'🧍'},
+  {id:'first_food',label:'First Solid Food',icon:'🥣'},
+];
+const FOOD_TYPES = ['Breast Milk','Formula','Oatmeal','Puree','Solids','Snack','Water'];
 let notifications = [];
 let notifShownIds = new Set();
 let wallModeOn = false;
@@ -803,7 +907,18 @@ function renderBaby(){
   document.getElementById('babyName').textContent=babySettings.name;
   document.getElementById('babyAge').textContent=`${age} months old`;
   document.getElementById('babyAgeLabel').textContent=`${age}mo`;
-  renderNap(); renderMoods(); renderBabyNotes();
+  renderBabyStats();
+  renderFeeding();
+  updateLastFedBadge();
+  renderNap();
+  renderBabyRoutine();
+  renderMoods();
+  renderMedicineLog();
+  renderMilestones();
+  renderBabyNotes();
+  // Update last fed every minute
+  clearInterval(window._lastFedInterval);
+  window._lastFedInterval=setInterval(updateLastFedBadge,60000);
 }
 
 function renderNap(){
@@ -837,6 +952,178 @@ function logMood(m){ moods.unshift({id:uid(),mood:m,timestamp:new Date().toISOSt
 
 function saveBabyNote(){ const txt=document.getElementById('babyNoteInput').value.trim(); if(!txt)return; babyNotes.unshift({id:uid(),content:txt,date:todayKey(),createdAt:new Date().toISOString()}); ss('baby_notes',babyNotes); document.getElementById('babyNoteInput').value=''; renderBabyNotes(); }
 function renderBabyNotes(){ document.getElementById('babyNotesList').innerHTML=babyNotes.slice(0,5).map(n=>`<div class="note-item"><div class="note-meta">${new Date(n.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${fmtTime(n.createdAt)}</div><div class="note-body">${escH(n.content)}</div></div>`).join(''); }
+
+// ── FEEDING ──────────────────────────────────────────────────────────────────
+let _selectedFoodType = 'Breast Milk';
+function selectFoodType(btn,type){
+  _selectedFoodType=type;
+  document.querySelectorAll('#foodTypeBtns .footer-btn').forEach(b=>{
+    b.style.background='none';b.style.borderColor='var(--border)';b.style.color='var(--text-dim)';
+  });
+  btn.style.background='rgba(212,165,62,0.15)';btn.style.borderColor='var(--amber)';btn.style.color='var(--amber)';
+}
+function openFeedingDialog(){
+  _selectedFoodType='Breast Milk';
+  document.getElementById('feedingAmount').value='';
+  document.getElementById('feedingFood').value='';
+  document.querySelectorAll('#foodTypeBtns .footer-btn').forEach((b,i)=>{
+    if(i===0){b.style.background='rgba(212,165,62,0.15)';b.style.borderColor='var(--amber)';b.style.color='var(--amber)';}
+    else{b.style.background='none';b.style.borderColor='var(--border)';b.style.color='var(--text-dim)';}
+  });
+  document.getElementById('feedingDialog').classList.add('open');
+}
+function saveFeeding(){
+  const entry={id:uid(),type:_selectedFoodType,amount:document.getElementById('feedingAmount').value.trim(),food:document.getElementById('feedingFood').value.trim(),timestamp:new Date().toISOString(),date:todayKey()};
+  feedingLog.unshift(entry);ss('feeding_log',feedingLog);
+  closeDialog('feedingDialog');renderFeeding();updateLastFedBadge();renderBabyStats();
+}
+function quickFeed(type){
+  const entry={id:uid(),type,amount:'',food:'',timestamp:new Date().toISOString(),date:todayKey()};
+  feedingLog.unshift(entry);ss('feeding_log',feedingLog);
+  renderFeeding();updateLastFedBadge();renderBabyStats();
+}
+function deleteFeeding(id){
+  feedingLog=feedingLog.filter(f=>f.id!==id);ss('feeding_log',feedingLog);
+  renderFeeding();updateLastFedBadge();renderBabyStats();
+}
+function renderFeeding(){
+  // Quick buttons
+  const qb=document.getElementById('feedingQuickBtns');
+  if(qb) qb.innerHTML=['🤱 Breast Milk','🍼 Formula','🥣 Oatmeal','🍌 Snack'].map(t=>{
+    const[icon,...rest]=t.split(' ');const type=rest.join(' ');
+    return`<button onclick="quickFeed('${type}')" style="padding:7px 12px;background:var(--surface);border:1px solid var(--border);border-radius:16px;color:var(--text);font-size:12px;cursor:pointer;">${icon} ${type}</button>`;
+  }).join('');
+  // Today's log
+  const today=todayKey();
+  const todayFeeds=feedingLog.filter(f=>f.date===today);
+  const list=document.getElementById('feedingLogList');
+  if(list) list.innerHTML=todayFeeds.slice(0,6).map(f=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <span style="font-size:13px;font-weight:600;color:#fff;">${f.type}</span>
+        ${f.food?`<span style="font-size:12px;color:var(--text-dim);"> · ${escH(f.food)}</span>`:''}
+        ${f.amount?`<span style="font-size:12px;color:var(--amber);"> · ${escH(f.amount)}</span>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--text-dim);">${fmtTime(f.timestamp)}</span>
+        <button onclick="deleteFeeding('${f.id}')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;">✕</button>
+      </div>
+    </div>`).join('')||`<div style="font-size:13px;color:var(--text-dim);padding:8px 0;">No feedings logged today</div>`;
+}
+function updateLastFedBadge(){
+  const badge=document.getElementById('lastFedBadge');if(!badge)return;
+  const last=feedingLog[0];
+  if(!last){badge.textContent='';return;}
+  const mins=Math.floor((Date.now()-new Date(last.timestamp).getTime())/60000);
+  const h=Math.floor(mins/60);const m=mins%60;
+  const ago=h>0?`${h}h ${m}m ago`:`${m}m ago`;
+  badge.innerHTML=`<div style="font-size:10px;color:var(--text-dim);">Last fed</div><div style="font-size:13px;font-weight:700;color:var(--amber);">${ago}</div><div style="font-size:11px;color:var(--text-dim);">${last.type}</div>`;
+}
+
+// ── BABY STATS ────────────────────────────────────────────────────────────────
+function renderBabyStats(){
+  const row=document.getElementById('babyStatsRow');if(!row)return;
+  const today=todayKey();
+  const feeds=feedingLog.filter(f=>f.date===today).length;
+  const todayNaps=naps.filter(n=>n.date===today);
+  const totalSleep=todayNaps.reduce((s,n)=>n.endTime?s+(new Date(n.endTime)-new Date(n.startTime)):s,0);
+  const sleepH=(totalSleep/3600000).toFixed(1);
+  const lastMood=moods.filter(m=>m.date===today)[0];
+  row.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">
+      <div style="font-size:18px;">🍼</div>
+      <div style="font-size:18px;font-weight:800;color:var(--amber);">${feeds}</div>
+      <div style="font-size:9px;color:var(--text-dim);">feedings</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">
+      <div style="font-size:18px;">😴</div>
+      <div style="font-size:18px;font-weight:800;color:var(--purple);">${sleepH}h</div>
+      <div style="font-size:9px;color:var(--text-dim);">sleep today</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;">
+      <div style="font-size:18px;">${lastMood?MOOD_ICONS[lastMood.mood]:'😊'}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);">${lastMood?MOOD_LABELS[lastMood.mood]:'–'}</div>
+      <div style="font-size:9px;color:var(--text-dim);">last mood</div>
+    </div>`;
+}
+
+// ── DAILY ROUTINE ─────────────────────────────────────────────────────────────
+function renderBabyRoutine(){
+  const list=document.getElementById('babyRoutineList');if(!list)return;
+  const today=todayKey();
+  const done=babyRoutine[today]||{};
+  list.innerHTML=BABY_ROUTINE_TASKS.map(t=>`
+    <div onclick="toggleRoutineTask('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;">
+      <div style="width:22px;height:22px;border-radius:6px;border:2px solid ${done[t.id]?'var(--amber)':'var(--border)'};background:${done[t.id]?'var(--amber)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;flex-shrink:0;">${done[t.id]?'✓':''}</div>
+      <span style="font-size:18px;">${t.icon}</span>
+      <div style="flex:1;">
+        <div style="font-size:13px;font-weight:600;color:${done[t.id]?'var(--text-dim)':'#fff'};${done[t.id]?'text-decoration:line-through;':''}">${t.label}</div>
+      </div>
+      <span style="font-size:11px;color:var(--text-dim);">${t.time}</span>
+    </div>`).join('');
+}
+function toggleRoutineTask(id){
+  const today=todayKey();
+  if(!babyRoutine[today])babyRoutine[today]={};
+  babyRoutine[today][id]=!babyRoutine[today][id];
+  ss('baby_routine',babyRoutine);renderBabyRoutine();
+}
+
+// ── MEDICINE ──────────────────────────────────────────────────────────────────
+function openMedDialog(){
+  document.getElementById('medName').value='';
+  document.getElementById('medDose').value='';
+  document.getElementById('medNotes').value='';
+  document.getElementById('medDialog').classList.add('open');
+  setTimeout(()=>document.getElementById('medName').focus(),100);
+}
+function saveMedicine(){
+  const name=document.getElementById('medName').value.trim();if(!name)return;
+  const entry={id:uid(),name,dose:document.getElementById('medDose').value.trim(),notes:document.getElementById('medNotes').value.trim(),timestamp:new Date().toISOString(),date:todayKey()};
+  medicineLog.unshift(entry);ss('medicine_log',medicineLog);
+  closeDialog('medDialog');renderMedicineLog();
+}
+function deleteMed(id){medicineLog=medicineLog.filter(m=>m.id!==id);ss('medicine_log',medicineLog);renderMedicineLog();}
+function renderMedicineLog(){
+  const list=document.getElementById('medicineLogList');if(!list)return;
+  const today=todayKey();
+  const todayMeds=medicineLog.filter(m=>m.date===today);
+  list.innerHTML=todayMeds.length?todayMeds.map(m=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
+      <div>
+        <span style="font-size:13px;font-weight:600;color:#fff;">💊 ${escH(m.name)}</span>
+        ${m.dose?`<span style="font-size:12px;color:var(--amber);"> · ${escH(m.dose)}</span>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--text-dim);">${fmtTime(m.timestamp)}</span>
+        <button onclick="deleteMed('${m.id}')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px;">✕</button>
+      </div>
+    </div>`).join(''):`<div style="font-size:13px;color:var(--text-dim);">No medicine logged today</div>`;
+}
+
+// ── MILESTONES ────────────────────────────────────────────────────────────────
+function renderMilestones(){
+  const grid=document.getElementById('milestoneGrid');if(!grid)return;
+  grid.innerHTML=MILESTONE_LIST.map(m=>{
+    const hit=milestones.find(x=>x.id===m.id);
+    return`<div onclick="toggleMilestone('${m.id}')" style="padding:10px 6px;background:${hit?'rgba(212,165,62,0.12)':'var(--surface)'};border:1px solid ${hit?'rgba(212,165,62,0.4)':'var(--border)'};border-radius:8px;text-align:center;cursor:pointer;transition:all 0.2s;">
+      <div style="font-size:20px;margin-bottom:3px;">${m.icon}</div>
+      <div style="font-size:10px;font-weight:600;color:${hit?'var(--amber)':'var(--text-dim)'};line-height:1.3;">${m.label}</div>
+      ${hit?`<div style="font-size:9px;color:var(--text-dim);margin-top:2px;">${new Date(hit.date).toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function toggleMilestone(id){
+  const existing=milestones.find(m=>m.id===id);
+  if(existing){
+    if(confirm('Remove this milestone?')){milestones=milestones.filter(m=>m.id!==id);ss('milestones',milestones);renderMilestones();}
+  }else{
+    const m=MILESTONE_LIST.find(x=>x.id===id);
+    milestones.push({id,label:m.label,date:new Date().toISOString(),icon:m.icon});
+    ss('milestones',milestones);renderMilestones();
+    speak(`${babySettings.name} hit a milestone — ${m.label}! That's amazing!`);
+  }
+}
 
 async function loadDevTips(){
   if(!apiKey){showKeyModal();return;}
