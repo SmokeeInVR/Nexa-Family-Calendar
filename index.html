@@ -344,7 +344,10 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
       </div>
       <div class="dinner-section" style="margin-top:8px;">
         <div class="section-h">🍽 Tonight's Dinner</div>
-        <textarea class="dinner-input" id="dinnerInput" placeholder="What's for dinner tonight?" oninput="saveDinner(this.value)"></textarea>
+        <div style="display:flex;gap:8px;align-items:flex-start;">
+        <textarea class="dinner-input" id="dinnerInput" placeholder="What's for dinner tonight?" oninput="saveDinner(this.value)" style="flex:1;"></textarea>
+        <button onclick="pullDinnerFromMealPlanner()" title="Pull from Meal Planner" style="padding:8px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--amber);cursor:pointer;font-size:14px;flex-shrink:0;margin-top:2px;">🍽</button>
+      </div>
       </div>
     </div>
   </div>
@@ -550,13 +553,61 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 </div>
 
 <script>
+// ══ RAILWAY ══
+const RAILWAY_URL='https://nexa-finance-production.up.railway.app';
+
+async function speak(text){
+  const clean=text.replace(/<[^>]+>/g,'').trim();
+  if(!clean)return;
+  try{
+    const res=await fetch(`${RAILWAY_URL}/api/ai/speak`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:clean.slice(0,2500)})});
+    if(!res.ok)throw new Error('TTS failed');
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const audio=new Audio(url);
+    audio.onended=()=>URL.revokeObjectURL(url);
+    await audio.play();
+  }catch(e){console.warn('ElevenLabs TTS failed',e);}
+}
+
+async function pullDinnerFromMealPlanner(){
+  try{
+    const res=await fetch(`${RAILWAY_URL}/api/meals/summary`);
+    if(!res.ok)return;
+    const data=await res.json();
+    if(data?.today?.name){
+      dinner=data.today.name;
+      ss('tonights_dinner',dinner);
+      document.getElementById('dinnerInput').value=dinner;
+      pushFamilyToRailway();
+    }
+  }catch(e){console.warn('Meal planner pull failed',e);}
+}
+
+function pushFamilyToRailway(){
+  const today=todayKey();
+  const todayTasks=tasks.filter(t=>t.date===today);
+  const done=todayTasks.filter(t=>t.completed).length;
+  const todayEvts=events.filter(e=>e.date===today).map(e=>e.title);
+  const lastMood=moods.filter(m=>m.date===today).sort((a,b)=>b.timestamp.localeCompare(a.timestamp))[0];
+  const napDur=activeNap?fmtDur(Date.now()-new Date(activeNap.startTime).getTime()):null;
+  fetch(`${RAILWAY_URL}/api/family/summary`,{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      dinner,tasksDone:done,tasksTotal:todayTasks.length,
+      babyNapping:!!activeNap,babyMood:lastMood?.mood||null,
+      napDuration:napDur,todayEvents:todayEvts
+    })
+  }).catch(e=>console.warn('Family sync failed',e));
+}
+
 // ══ STORAGE ══
 const PFX = 'fcc_';
 function ls(k){ try{ const v=localStorage.getItem(PFX+k); return v?JSON.parse(v):null; }catch{ return null; } }
 function ss(k,v){ try{ localStorage.setItem(PFX+k,JSON.stringify(v)); }catch{} }
 
 // ══ STATE ══
-let apiKey = localStorage.getItem('fcc_key')||'';
+let apiKey = localStorage.getItem('fcc_key')||localStorage.getItem('nexa_api_key')||localStorage.getItem('nexafit_key')||'';
 let events = ls('events')||[];
 let tasks = ls('tasks')||[];
 let templates = ls('templates')||[];
@@ -594,7 +645,7 @@ function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
 
 // ══ KEY ══
-function saveKey(){ const v=document.getElementById('apiKeyInput').value.trim(); if(!v.startsWith('sk-')){document.getElementById('keyErr').style.display='block';return;} apiKey=v;localStorage.setItem('fcc_key',v);document.getElementById('keyModal').classList.remove('open'); }
+function saveKey(){ const v=document.getElementById('apiKeyInput').value.trim(); if(!v.startsWith('sk-')){document.getElementById('keyErr').style.display='block';return;} apiKey=v;localStorage.setItem('fcc_key',v);localStorage.setItem('nexa_api_key',v);document.getElementById('keyModal').classList.remove('open'); }
 function clearKey(){ apiKey='';localStorage.removeItem('fcc_key');document.getElementById('apiKeyInput').value=''; }
 
 // ══ TABS ══
@@ -649,7 +700,7 @@ function renderToday(){
   document.getElementById('dinnerInput').value=dinner;
 }
 
-function saveDinner(v){ dinner=v; ss('tonights_dinner',v); }
+function saveDinner(v){ dinner=v; ss('tonights_dinner',v); pushFamilyToRailway(); }
 
 // ══ CALENDAR ══
 function setCalView(v, btn){ calView=v; document.querySelectorAll('.cal-view-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderCal(); }
@@ -731,8 +782,8 @@ function renderNap(){
   document.getElementById('napLog').innerHTML=todayNaps.length?todayNaps.map(n=>{ const dur=n.endTime?fmtDur(new Date(n.endTime)-new Date(n.startTime)):'In progress'; return`<div class="nap-log"><span>${fmtTime(n.startTime)} – ${n.endTime?fmtTime(n.endTime):'...'}</span><span style="color:var(--purple);">${dur}</span></div>`; }).join('')+`<div style="font-size:11px;color:var(--text-dim);font-family:'Lora',serif;">Total sleep: <span style="color:var(--text);">${fmtDur(totalSleep)}</span></div>`:'' ;
 }
 
-function startNap(){ activeNap={id:uid(),startTime:new Date().toISOString(),date:todayKey()}; ss('active_nap',activeNap); renderNap(); }
-function endNap(){ if(!activeNap)return; naps.push({...activeNap,endTime:new Date().toISOString()}); ss('naps',naps); activeNap=null; ss('active_nap',null); clearInterval(napTimerInterval); renderNap(); }
+function startNap(){ activeNap={id:uid(),startTime:new Date().toISOString(),date:todayKey()}; ss('active_nap',activeNap); renderNap(); pushFamilyToRailway(); }
+function endNap(){ if(!activeNap)return; const dur=fmtDur(Date.now()-new Date(activeNap.startTime).getTime()); naps.push({...activeNap,endTime:new Date().toISOString()}); ss('naps',naps); activeNap=null; ss('active_nap',null); clearInterval(napTimerInterval); renderNap(); pushFamilyToRailway(); speak(`Nap ended. ${babySettings.name} was sleeping for ${dur}.`); }
 
 function renderMoods(){
   document.getElementById('moodBtns').innerHTML=Object.keys(MOOD_LABELS).map(m=>`<button class="mood-btn" onclick="logMood('${m}')" style="border-color:${MOOD_COLORS[m]}33;"><div class="mood-btn-icon">${MOOD_ICONS[m]}</div><div class="mood-btn-label" style="color:${MOOD_COLORS[m]};">${MOOD_LABELS[m]}</div></button>`).join('');
@@ -741,7 +792,7 @@ function renderMoods(){
   document.getElementById('moodLog').innerHTML=todayMoods.map(m=>`<div class="mood-log-item"><span style="color:var(--text-dim);font-size:10px;">${fmtTime(m.timestamp)}</span><span class="mood-badge" style="background:${MOOD_COLORS[m.mood]}22;color:${MOOD_COLORS[m.mood]};">${MOOD_LABELS[m.mood]}</span></div>`).join('');
 }
 
-function logMood(m){ moods.unshift({id:uid(),mood:m,timestamp:new Date().toISOString(),date:todayKey()}); ss('moods',moods); renderMoods(); renderToday(); }
+function logMood(m){ moods.unshift({id:uid(),mood:m,timestamp:new Date().toISOString(),date:todayKey()}); ss('moods',moods); renderMoods(); renderToday(); pushFamilyToRailway(); }
 
 function saveBabyNote(){ const txt=document.getElementById('babyNoteInput').value.trim(); if(!txt)return; babyNotes.unshift({id:uid(),content:txt,date:todayKey(),createdAt:new Date().toISOString()}); ss('baby_notes',babyNotes); document.getElementById('babyNoteInput').value=''; renderBabyNotes(); }
 function renderBabyNotes(){ document.getElementById('babyNotesList').innerHTML=babyNotes.slice(0,5).map(n=>`<div class="note-item"><div class="note-meta">${new Date(n.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${fmtTime(n.createdAt)}</div><div class="note-body">${escH(n.content)}</div></div>`).join(''); }
@@ -773,11 +824,20 @@ function renderTasks(){
   document.getElementById('taskProgressBar').style.width=pct+'%';
   document.getElementById('taskProgressLabel').textContent=`${done} of ${todayTasks.length} tasks done`;
   const sections=[{id:'baby',label:'Baby Routine',color:'#a78bfa'},{id:'family',label:'Family Tasks',color:'#60a5fa'},{id:'personal',label:'Personal Tasks',color:'#f59e0b'}];
-  document.getElementById('taskSections').innerHTML=sections.map(s=>{ const stasks=todayTasks.filter(t=>t.section===s.id).sort((a,b)=>a.order-b.order); const sdone=stasks.filter(t=>t.completed).length; const open=expandedSections[s.id]!==false; return`<div><button class="section-header" style="width:100%;background:var(--surface);border-bottom:2px solid ${s.color};border-top:none;border-left:none;border-right:none;" onclick="expandedSections['${s.id}']=!expandedSections['${s.id}'];renderTasks()"><div class="section-dot" style="background:${s.color};"></div><span class="section-header-title">${s.label}</span><span class="section-header-count">${sdone}/${stasks.length}</span><span style="color:var(--text-dim);">${open?'▾':'›'}</span></button>${open?stasks.map(t=>{ const pdc=t.assignedTo?PERSON_COLORS[t.assignedTo]||'#60a5fa':'transparent'; return`<div class="task-item"><div class="task-checkbox ${t.completed?'done':''}" onclick="toggleTask('${t.id}')">${t.completed?'✓':''}</div><span class="task-name ${t.completed?'done':''}">${escH(t.name)}</span>${t.time?`<span class="task-time">${fmt12(t.time)}</span>`:''}<div class="task-person-dot" style="background:${pdc};opacity:${t.assignedTo?1:0};"></div><button class="task-delete" onclick="deleteTask('${t.id}')">✕</button></div>`; }).join('')+`<div style="height:4px;"></div>`:''}` }).join('');
+  document.getElementById('taskSections').innerHTML=sections.map(s=>{ const stasks=todayTasks.filter(t=>t.section===s.id).sort((a,b)=>a.order-b.order); const sdone=stasks.filter(t=>t.completed).length; const open=expandedSections[s.id]!==false; return`<div><button class="section-header" style="width:100%;background:var(--surface);border-bottom:2px solid ${s.color};border-top:none;border-left:none;border-right:none;" onclick="expandedSections['${s.id}']=!expandedSections['${s.id}'];renderTasks()"><div class="section-dot" style="background:${s.color};"></div><span class="section-header-title">${s.label}</span><span class="section-header-count">${sdone}/${stasks.length}</span><span style="color:var(--text-dim);">${open?'▾':'›'}</span></button>${open?stasks.map(t=>{ const pdc=t.assignedTo?PERSON_COLORS[t.assignedTo]||'#60a5fa':'transparent'; return`<div class="task-item"><div class="task-checkbox ${t.completed?'done':''}" onclick="toggleTask('${t.id}')">${t.completed?'✓':''}</div><span class="task-name ${t.completed?'done':''}">${escH(t.name)}</span>${t.time?`<span class="task-time">${fmt12(t.time)}</span>`:''}<div class="task-person-dot" style="background:${pdc};opacity:${t.assignedTo?1:0};"></div><button class="task-delete" onclick="editTask('${t.id}')" style="opacity:0;margin-right:4px;" title="Edit">✎</button><button class="task-delete" onclick="deleteTask('${t.id}')" title="Delete">✕</button></div>`; }).join('')+`<div style="height:4px;"></div>`:''}` }).join('');
 }
 
-function toggleTask(id){ tasks=tasks.map(t=>t.id===id?{...t,completed:!t.completed}:t); ss('tasks',tasks); renderTasks(); renderToday(); }
+function toggleTask(id){ tasks=tasks.map(t=>t.id===id?{...t,completed:!t.completed}:t); ss('tasks',tasks); renderTasks(); renderToday(); pushFamilyToRailway(); }
 function deleteTask(id){ tasks=tasks.filter(t=>t.id!==id); ss('tasks',tasks); renderTasks(); }
+function editTask(id){
+  const t=tasks.find(t=>t.id===id); if(!t)return;
+  const newName=prompt('Edit task:',t.name);
+  if(newName===null)return;
+  const trimmed=newName.trim();
+  if(!trimmed)return;
+  tasks=tasks.map(x=>x.id===id?{...x,name:trimmed}:x);
+  ss('tasks',tasks); renderTasks();
+}
 function resetDay(){ const today=todayKey(); tasks=tasks.map(t=>t.date===today?{...t,completed:false}:t); ss('tasks',tasks); renderTasks(); }
 function openAddTask(){ document.getElementById('taskName').value=''; document.getElementById('taskTime').value=''; document.getElementById('addTaskDialog').classList.add('open'); setTimeout(()=>document.getElementById('taskName').focus(),100); }
 function saveTask(){ const name=document.getElementById('taskName').value.trim(); if(!name)return; const today=todayKey(); const section=document.getElementById('taskSection').value; const t={id:uid(),name,section,completed:false,time:document.getElementById('taskTime').value||undefined,assignedTo:document.getElementById('taskAssign').value||undefined,date:today,order:tasks.filter(t=>t.date===today&&t.section===section).length}; tasks.push(t); ss('tasks',tasks); closeDialog('addTaskDialog'); renderTasks(); }
@@ -915,6 +975,8 @@ function closeDialog(id){ document.getElementById(id).classList.remove('open'); 
 // ══ BOOT ══
 function init(){
   ensureBabyTasks();
+  // Initial push on load
+  setTimeout(pushFamilyToRailway, 2000);
   startClock();
   renderToday();
   renderNotifPanel();
