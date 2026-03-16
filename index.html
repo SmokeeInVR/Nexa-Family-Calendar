@@ -833,7 +833,7 @@ async function loadDevTips(){
   const age=getBabyAge(babySettings.birthdate);
   document.getElementById('devTipsSection').innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-family:'Lora',serif;font-size:13px;color:var(--text-dim);"><div class="spinner"></div> Getting ideas...</div>`;
   try{
-    const resp=await fetch(`${RAILWAY_URL}/api/ai/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:`Give me exactly 3 age-appropriate developmental activity suggestions for a ${age}-month-old baby girl. Format as a numbered list with just the activity and a one-sentence description. Keep it concise.`}],max_tokens:400})});
+    const resp=await fetch(`${RAILWAY_URL}/api/ai/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey,messages:[{role:'user',content:`Give me exactly 3 age-appropriate developmental activity suggestions for a ${age}-month-old baby girl. Format as a numbered list with just the activity and a one-sentence description. Keep it concise.`}],max_tokens:400})});
     const d=await resp.json();
     const text=d.content?.[0]?.text||'';
     const lines=text.split('\n').filter(l=>l.trim()).slice(0,3);
@@ -924,7 +924,7 @@ async function sendAsk(){
   document.getElementById('askSendBtn').disabled=true;
   renderAsk();
   try{
-    const resp=await fetch(`${RAILWAY_URL}/api/ai/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system:`You are a helpful family assistant for a household with a 1-year-old baby girl named ${babySettings.name}. The parents are husband and wife. You help with parenting advice, baby development, family organization, meal ideas, and general household questions. Be warm, practical, and concise.`,messages:chatMessages.slice(0,-1).map(m=>({role:m.role,content:m.content})),max_tokens:600})});
+    const resp=await fetch(`${RAILWAY_URL}/api/ai/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey,system:`You are a helpful family assistant for a household with a 1-year-old baby girl named ${babySettings.name}. The parents are husband and wife. You help with parenting advice, baby development, family organization, meal ideas, and general household questions. Be warm, practical, and concise.`,messages:chatMessages.slice(0,-1).map(m=>({role:m.role,content:m.content})),max_tokens:600})});
     const d=await resp.json();
     if(!resp.ok) throw new Error(d.error?.message||resp.status);
     const text=d.content?.[0]?.text||'Sorry, I could not get a response.';
