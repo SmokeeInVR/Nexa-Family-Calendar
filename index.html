@@ -17,7 +17,7 @@ html,body { height:100%; overflow:hidden; }
 body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; }
 
 /* LAYOUT */
-.app { display:flex; flex-direction:column; height:100vh; max-width:480px; margin:0 auto; }
+.app { display:flex; flex-direction:column; height:100vh; max-width:480px; margin:0 auto; padding-bottom:70px; }
 .header { background:#0a0a0a; border-bottom:2px solid var(--amber); padding:12px 16px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; z-index:50; }
 .header-title { font-family:'Lora',serif; font-size:17px; font-weight:700; color:var(--amber); }
 .header-right { display:flex; align-items:center; gap:8px; }
@@ -138,7 +138,8 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 /* TASKS */
 .progress-bar-bg { height:8px; background:rgba(255,255,255,0.06); border-radius:4px; overflow:hidden; margin-bottom:6px; }
 .progress-bar-fill { height:100%; background:var(--amber); border-radius:4px; transition:width 0.3s; }
-.section-header { display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:2px solid; cursor:pointer; }
+.section-header { display:flex; align-items:center; gap:8px; padding:10px 16px; border-bottom:2px solid; cursor:pointer; background:var(--surface); }
+.section-header-title { font-family:'Lora',serif; font-size:14px; font-weight:700; color:#ffffff !important; }
 .section-header-title { font-family:'Lora',serif; font-size:13px; font-weight:600; flex:1; text-align:left; }
 .section-header-count { font-size:11px; color:var(--text-dim); }
 .section-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
@@ -168,7 +169,7 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 .bubble-user { background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:14px 14px 3px 14px; }
 .bubble-asst { background:var(--surface); border:1px solid var(--border); border-radius:14px 14px 14px 3px; }
 .sender-label { font-size:10px; margin-bottom:3px; }
-.ask-input-area { padding:12px 16px 24px; border-top:1px solid var(--border); background:var(--bg); flex-shrink:0; }
+.ask-input-area { padding:12px 16px 12px; border-top:1px solid var(--border); background:var(--bg); flex-shrink:0; }
 .ask-input-row { display:flex; gap:8px; align-items:flex-end; }
 .ask-input { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 12px; color:var(--text); font-family:'Lora',serif; font-size:13px; resize:none; outline:none; min-height:44px; max-height:120px; line-height:1.4; }
 .ask-input:focus { border-color:var(--amber); }
@@ -308,7 +309,7 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
   </div>
 
   <!-- TODAY PANEL -->
-  <div class="panel active" id="panel-today">
+  <div class="panel active" id="panel-today" style="display:flex;">
     <div class="scroll" id="today-scroll">
       <div class="clock-section" style="padding-bottom:8px;">
         <div class="greeting" id="todayGreeting">Good Morning</div>
@@ -409,31 +410,31 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
       <div id="taskSections"></div>
     </div>
     <div class="tasks-footer">
-      <button class="footer-btn primary" onclick="openAddTask('family')" style="flex:1;">+ Family</button>
-      <button class="footer-btn primary" onclick="openAddTask('personal')" style="flex:1;background:#a78bfa;border-color:#a78bfa;">+ Personal</button>
-      <button class="footer-btn primary" onclick="openAddTask('baby')" style="flex:1;background:#60a5fa;border-color:#60a5fa;">+ Baby</button>
-      <button class="footer-btn" onclick="openTemplates()" style="padding:7px 10px;">🔖</button>
-      <button class="footer-btn" onclick="resetDay()" style="padding:7px 10px;">↺</button>
+      <button class="footer-btn primary" onclick="openAddTask('family')" style="flex:1;font-size:11px;">+ Family</button>
+      <button class="footer-btn primary" onclick="openAddTask('personal')" style="flex:1;background:#a78bfa;border-color:#a78bfa;font-size:11px;">+ Personal</button>
+      <button class="footer-btn primary" onclick="openAddTask('baby')" style="flex:1;background:#60a5fa;border-color:#60a5fa;font-size:11px;">+ Baby</button>
+      <button class="footer-btn" onclick="openTemplates()" title="Templates" style="padding:7px 10px;">🔖</button>
+      <button class="footer-btn" onclick="resetDay()" title="Reset day" style="padding:7px 10px;">↺</button>
     </div>
   </div>
 
   <!-- ASK PANEL -->
-  <div class="panel" id="panel-ask">
-    <div class="ask-header">
+  <div class="panel" id="panel-ask" style="flex-direction:column;height:calc(100vh - 130px);">
+    <div class="ask-header" style="flex-shrink:0;">
       <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-dim);">
         Sending as:
-        <button class="sender-toggle" id="senderToggleBtn" onclick="toggleSender()" style="border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.1);color:var(--amber);">
+        <button class="sender-toggle" id="senderToggleBtn" onclick="toggleSender()" style="border-color:rgba(212,165,62,0.4);background:rgba(212,165,62,0.1);color:var(--amber);">
           <div style="width:6px;height:6px;border-radius:50%;background:var(--amber);"></div>
           <span id="senderLabel">Husband</span>
         </button>
       </div>
       <button onclick="clearChat()" id="clearChatBtn" style="display:none;font-size:11px;color:var(--text-dim);background:none;border:none;cursor:pointer;">Clear chat</button>
     </div>
-    <div id="askMessages" style="flex:1;overflow-y:auto;"></div>
-    <div class="ask-input-area">
-      <div class="ask-input-row">
-        <textarea class="ask-input" id="askInput" placeholder="Ask about baby, family, meals, activities..." rows="1" oninput="autoResizeAsk(this)" onkeydown="handleAskKey(event)"></textarea>
-        <button class="ask-send" id="askSendBtn" onclick="sendAsk()">➤</button>
+    <div id="askMessages" style="flex:1;overflow-y:auto;padding:8px 0 8px;"></div>
+    <div style="padding:10px 16px 12px;border-top:1px solid var(--border);background:var(--bg);flex-shrink:0;">
+      <div style="display:flex;gap:8px;align-items:flex-end;">
+        <textarea class="ask-input" id="askInput" placeholder="Ask about baby, family, meals, activities..." rows="1" oninput="autoResizeAsk(this)" onkeydown="handleAskKey(event)" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--text);font-family:'Lora',serif;font-size:13px;resize:none;outline:none;min-height:44px;max-height:100px;line-height:1.4;"></textarea>
+        <button id="askSendBtn" onclick="sendAsk()" style="width:44px;height:44px;background:var(--amber);border:none;border-radius:10px;color:#000;cursor:pointer;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;">➤</button>
       </div>
     </div>
   </div>
@@ -521,24 +522,31 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 <div class="dialog-overlay" id="addTaskDialog">
   <div class="dialog-sheet">
     <div class="dialog-title">Add Task</div>
-    <input class="form-input" id="taskName" placeholder="Task name" onkeydown="if(event.key==='Enter')saveTask()">
-    <div class="form-row">
-      <select class="form-select" id="taskSection" style="margin-bottom:0;">
-        <option value="baby">Baby</option>
-        <option value="family" selected>Family</option>
-        <option value="personal">Personal</option>
-      </select>
-      <select class="form-select" id="taskAssign" style="margin-bottom:0;">
-        <option value="">Anyone</option>
-        <option value="husband">Husband</option>
-        <option value="wife">Wife</option>
-      </select>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Task Name</div>
+    <input class="form-input" id="taskName" placeholder="What needs to be done?" onkeydown="if(event.key==='Enter')saveTask()">
+    <div class="form-row" style="margin-bottom:8px;">
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Section</div>
+        <select class="form-select" id="taskSection" style="margin-bottom:0;width:100%;">
+          <option value="baby">🍼 Baby</option>
+          <option value="family" selected>👨‍👩‍👧 Family</option>
+          <option value="personal">⭐ Personal</option>
+        </select>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Assign To</div>
+        <select class="form-select" id="taskAssign" style="margin-bottom:0;width:100%;">
+          <option value="">Anyone</option>
+          <option value="husband">Husband</option>
+          <option value="wife">Wife</option>
+        </select>
+      </div>
     </div>
-    <div style="height:8px;"></div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Time (optional)</div>
     <input class="form-input" id="taskTime" type="time">
     <div class="form-actions">
       <button class="btn-secondary" onclick="closeDialog('addTaskDialog')">Cancel</button>
-      <button class="btn-primary" onclick="saveTask()">Save</button>
+      <button class="btn-primary" onclick="saveTask()">Save Task</button>
     </div>
   </div>
 </div>
@@ -681,9 +689,11 @@ function showKeyModal(){
 
 // ══ TABS ══
 function switchTab(id, btn){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('panel-'+id).classList.add('active');
+  const panelEl = document.getElementById('panel-'+id);
+  panelEl.classList.add('active');
+  panelEl.style.display='flex';
   const nb = btn||document.getElementById('nav-'+id);
   if(nb) nb.classList.add('active');
   if(id==='today') renderToday();
@@ -855,7 +865,7 @@ function renderTasks(){
   document.getElementById('taskProgressBar').style.width=pct+'%';
   document.getElementById('taskProgressLabel').textContent=`${done} of ${todayTasks.length} tasks done`;
   const sections=[{id:'baby',label:'Baby Routine',color:'#a78bfa'},{id:'family',label:'Family Tasks',color:'#60a5fa'},{id:'personal',label:'Personal Tasks',color:'#f59e0b'}];
-  document.getElementById('taskSections').innerHTML=sections.map(s=>{ const stasks=todayTasks.filter(t=>t.section===s.id).sort((a,b)=>a.order-b.order); const sdone=stasks.filter(t=>t.completed).length; const open=expandedSections[s.id]!==false; return`<div><button class="section-header" style="width:100%;background:var(--surface);border-bottom:2px solid ${s.color};border-top:none;border-left:none;border-right:none;" onclick="expandedSections['${s.id}']=!expandedSections['${s.id}'];renderTasks()"><div class="section-dot" style="background:${s.color};"></div><span class="section-header-title">${s.label}</span><span class="section-header-count">${sdone}/${stasks.length}</span><span style="color:var(--text-dim);">${open?'▾':'›'}</span></button>${open?stasks.map(t=>{ const pdc=t.assignedTo?PERSON_COLORS[t.assignedTo]||'#60a5fa':'transparent'; return`<div class="task-item"><div class="task-checkbox ${t.completed?'done':''}" onclick="toggleTask('${t.id}')">${t.completed?'✓':''}</div><span class="task-name ${t.completed?'done':''}">${escH(t.name)}</span>${t.time?`<span class="task-time">${fmt12(t.time)}</span>`:''}<div class="task-person-dot" style="background:${pdc};opacity:${t.assignedTo?1:0};"></div><button class="task-delete" onclick="editTask('${t.id}')" style="margin-right:4px;opacity:0.5;" title="Edit">✎</button><button class="task-delete" onclick="deleteTask('${t.id}')" title="Delete">✕</button></div>`; }).join('')+`<div style="height:4px;"></div>`:''}` }).join('');
+  document.getElementById('taskSections').innerHTML=sections.map(s=>{ const stasks=todayTasks.filter(t=>t.section===s.id).sort((a,b)=>a.order-b.order); const sdone=stasks.filter(t=>t.completed).length; const open=expandedSections[s.id]!==false; return`<div><button class="section-header" style="width:100%;background:var(--surface);border-bottom:2px solid ${s.color};border-top:none;border-left:none;border-right:none;" onclick="expandedSections['${s.id}']=!expandedSections['${s.id}'];renderTasks()"><div class="section-dot" style="background:${s.color};"></div><span class="section-header-title" style="color:#ffffff;font-weight:700;">${s.label}</span><span class="section-header-count">${sdone}/${stasks.length}</span><span style="color:var(--text-dim);">${open?'▾':'›'}</span></button>${open?stasks.map(t=>{ const pdc=t.assignedTo?PERSON_COLORS[t.assignedTo]||'#60a5fa':'transparent'; return`<div class="task-item"><div class="task-checkbox ${t.completed?'done':''}" onclick="toggleTask('${t.id}')">${t.completed?'✓':''}</div><span class="task-name ${t.completed?'done':''}" style="${t.completed?'':' color:#ffffff;'}">${escH(t.name)}</span>${t.time?`<span class="task-time">${fmt12(t.time)}</span>`:''}<div class="task-person-dot" style="background:${pdc};opacity:${t.assignedTo?1:0};"></div><button class="task-delete" onclick="editTask('${t.id}')" style="margin-right:4px;opacity:0.5;" title="Edit">✎</button><button class="task-delete" onclick="deleteTask('${t.id}')" title="Delete">✕</button></div>`; }).join('')+`<div style="height:4px;"></div>`:''}` }).join('');
 }
 
 function toggleTask(id){ tasks=tasks.map(t=>t.id===id?{...t,completed:!t.completed}:t); ss('tasks',tasks); renderTasks(); renderToday(); pushFamilyToRailway(); }
@@ -924,13 +934,20 @@ async function sendAsk(){
   document.getElementById('askSendBtn').disabled=true;
   renderAsk();
   try{
-    const resp=await fetch(`${RAILWAY_URL}/api/ai/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey,system:`You are a helpful family assistant for a household with a 1-year-old baby girl named ${babySettings.name}. The parents are husband and wife. You help with parenting advice, baby development, family organization, meal ideas, and general household questions. Be warm, practical, and concise.`,messages:chatMessages.slice(0,-1).map(m=>({role:m.role,content:m.content})),max_tokens:600})});
+    if(!apiKey) throw new Error('No API key - tap API Key button to enter your key');
+    const payload={apiKey,system:`You are a helpful family assistant for a household with a 1-year-old baby girl named ${babySettings.name}. The parents are husband and wife. You help with parenting advice, baby development, family organization, meal ideas, and general household questions. Be warm, practical, and concise.`,messages:chatMessages.slice(0,-1).map(m=>({role:m.role,content:m.content})),max_tokens:600};
+    const resp=await fetch(`${RAILWAY_URL}/api/ai/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await resp.json();
-    if(!resp.ok) throw new Error(d.error?.message||resp.status);
+    if(!resp.ok) throw new Error(d.message||d.error?.message||`HTTP ${resp.status}`);
     const text=d.content?.[0]?.text||'Sorry, I could not get a response.';
     chatMessages=chatMessages.map(m=>m.id===asstId?{...m,content:text}:m);
     ss('chat_messages',chatMessages);
-  }catch(e){ console.error('Ask error:',e); chatMessages=chatMessages.map(m=>m.id===asstId?{...m,content:'Sorry, I could not get a response. Please try again.'}:m); ss('chat_messages',chatMessages); }
+  }catch(e){
+    console.error('Ask error:',e);
+    const errMsg=e.message||'Unknown error';
+    chatMessages=chatMessages.map(m=>m.id===asstId?{...m,content:`⚠ ${errMsg}`}:m);
+    ss('chat_messages',chatMessages);
+  }
   finally{ askStreaming=false; document.getElementById('askSendBtn').disabled=false; renderAsk(); }
 }
 
