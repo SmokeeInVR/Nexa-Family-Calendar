@@ -370,12 +370,16 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
   <div class="panel" id="panel-baby">
     <div class="scroll">
       <!-- HEADER -->
-      <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:14px;">
-        <div>
-          <div style="font-family:'Lora',serif;font-size:22px;font-weight:700;color:#fff;" id="babyName">Lily</div>
-          <div style="font-size:14px;color:var(--purple);" id="babyAge"></div>
+      <div style="padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div>
+            <div style="font-family:'Lora',serif;font-size:22px;font-weight:700;color:#fff;" id="babyName">Lily</div>
+            <div style="font-size:13px;color:var(--purple);margin-bottom:2px;" id="babyAge"></div>
+            <div style="font-size:11px;color:var(--text-dim);" id="babyBirthday"></div>
+          </div>
+          <div id="lastFedBadge" style="text-align:right;font-size:11px;color:var(--text-dim);font-family:'Lora',serif;"></div>
         </div>
-        <div id="lastFedBadge" style="text-align:right;font-size:11px;color:var(--text-dim);font-family:'Lora',serif;"></div>
+        <button onclick="openBabySettings()" style="width:100%;padding:8px;background:none;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-size:12px;cursor:pointer;font-family:'Lora',serif;">⚙️ Edit Baby Profile & Birthday</button>
       </div>
 
       <!-- QUICK STATS ROW -->
@@ -396,7 +400,13 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
       <div class="divider"></div>
 
       <!-- DAILY ROUTINE -->
-      <div class="section-h">✅ Daily Routine</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div class="section-h" style="margin:0;">✅ Daily Routine</div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="aiGenerateRoutine()" style="background:none;border:1px solid var(--amber);border-radius:6px;padding:4px 10px;color:var(--amber);font-size:11px;cursor:pointer;">✨ AI</button>
+          <button onclick="openAddRoutineTask()" style="background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--text-dim);font-size:11px;cursor:pointer;">+ Add</button>
+        </div>
+      </div>
       <div id="babyRoutineList" style="margin-bottom:12px;"></div>
       <div class="divider"></div>
 
@@ -434,6 +444,38 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
         <button class="refresh-btn" onclick="loadDevTips()">↻ Refresh</button>
       </div>
       <div id="devTipsSection"><div style="font-family:'Lora',serif;font-size:13px;color:var(--text-dim);padding:12px 0;">Tap refresh to get activity suggestions</div></div>
+    </div>
+  </div>
+
+  <!-- BABY SETTINGS DIALOG -->
+  <div class="dialog-overlay" id="babySettingsDialog">
+    <div class="dialog-sheet">
+      <div class="dialog-title">Baby Profile</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Name</div>
+      <input class="form-input" id="bsName" placeholder="Baby's name">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Birthday</div>
+      <input class="form-input" id="bsBirthday" type="date">
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeDialog('babySettingsDialog')">Cancel</button>
+        <button class="btn-primary" onclick="saveBabyProfile()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD ROUTINE TASK DIALOG -->
+  <div class="dialog-overlay" id="addRoutineDialog">
+    <div class="dialog-sheet">
+      <div class="dialog-title">Add Routine Task</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Task Name</div>
+      <input class="form-input" id="rtName" placeholder="e.g. Morning Diaper">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Time</div>
+      <input class="form-input" id="rtTime" placeholder="e.g. 7:00 AM">
+      <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;font-family:'Lora',serif;">Icon (emoji)</div>
+      <input class="form-input" id="rtIcon" placeholder="e.g. 🩲" maxlength="2">
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeDialog('addRoutineDialog')">Cancel</button>
+        <button class="btn-primary" onclick="saveRoutineTask()">Add Task</button>
+      </div>
     </div>
   </div>
 
@@ -723,7 +765,7 @@ let feedingLog = ls('feeding_log')||[];
 let medicineLog = ls('medicine_log')||[];
 let milestones = ls('milestones')||[];
 let babyRoutine = ls('baby_routine')||{};
-const BABY_ROUTINE_TASKS = [
+let BABY_ROUTINE_TASKS = ls('baby_routine_tasks')||[
   {id:'diaper_morning',label:'Morning Diaper',icon:'🩲',time:'7:00 AM'},
   {id:'tummy_time',label:'Tummy Time',icon:'🤸',time:'10:00 AM'},
   {id:'diaper_midday',label:'Midday Diaper',icon:'🩲',time:'12:00 PM'},
@@ -732,6 +774,8 @@ const BABY_ROUTINE_TASKS = [
   {id:'teeth',label:'Brush Teeth',icon:'🦷',time:'7:30 PM'},
   {id:'vitamin',label:'Vitamin D Drops',icon:'💊',time:'8:00 AM'},
 ];
+// Load custom routine if saved
+try{ const saved=ls('baby_routine_tasks'); if(saved&&saved.length) BABY_ROUTINE_TASKS=saved; }catch{}
 const MILESTONE_LIST = [
   {id:'first_smile',label:'First Smile',icon:'😊'},
   {id:'first_laugh',label:'First Laugh',icon:'😂'},
@@ -905,8 +949,9 @@ function deleteSelectedEvent(){ if(!selectedEventId)return; events=events.filter
 function renderBaby(){
   const age=getBabyAge(babySettings.birthdate);
   document.getElementById('babyName').textContent=babySettings.name;
-  document.getElementById('babyAge').textContent=`${age} months old`;
+  document.getElementById('babyAge').textContent=`${age} month${age===1?'':'s'} old`;
   document.getElementById('babyAgeLabel').textContent=`${age}mo`;
+  renderBabyBirthday();
   renderBabyStats();
   renderFeeding();
   updateLastFedBadge();
@@ -1052,21 +1097,98 @@ function renderBabyRoutine(){
   const list=document.getElementById('babyRoutineList');if(!list)return;
   const today=todayKey();
   const done=babyRoutine[today]||{};
-  list.innerHTML=BABY_ROUTINE_TASKS.map(t=>`
-    <div onclick="toggleRoutineTask('${t.id}')" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer;">
-      <div style="width:22px;height:22px;border-radius:6px;border:2px solid ${done[t.id]?'var(--amber)':'var(--border)'};background:${done[t.id]?'var(--amber)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;flex-shrink:0;">${done[t.id]?'✓':''}</div>
+  const total=BABY_ROUTINE_TASKS.length;
+  const doneCount=BABY_ROUTINE_TASKS.filter(t=>done[t.id]).length;
+  list.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div style="font-size:11px;color:var(--text-dim);">${doneCount}/${total} tasks done today</div>
+      <div style="height:6px;flex:1;margin:0 10px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${total?Math.round(doneCount/total*100):0}%;background:var(--amber);border-radius:3px;transition:width 0.3s;"></div></div>
+    </div>
+    ${BABY_ROUTINE_TASKS.map(t=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
+      <div onclick="toggleRoutineTask('${t.id}')" style="width:22px;height:22px;border-radius:6px;border:2px solid ${done[t.id]?'var(--amber)':'var(--border)'};background:${done[t.id]?'var(--amber)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#000;flex-shrink:0;cursor:pointer;">${done[t.id]?'✓':''}</div>
       <span style="font-size:18px;">${t.icon}</span>
-      <div style="flex:1;">
+      <div style="flex:1;cursor:pointer;" onclick="toggleRoutineTask('${t.id}')">
         <div style="font-size:13px;font-weight:600;color:${done[t.id]?'var(--text-dim)':'#fff'};${done[t.id]?'text-decoration:line-through;':''}">${t.label}</div>
+        ${t.time?`<div style="font-size:10px;color:var(--text-dim);">${t.time}</div>`:''}
       </div>
-      <span style="font-size:11px;color:var(--text-dim);">${t.time}</span>
-    </div>`).join('');
+      <button onclick="deleteRoutineTask('${t.id}')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;padding:2px 6px;">✕</button>
+    </div>`).join('')}`;
 }
 function toggleRoutineTask(id){
   const today=todayKey();
   if(!babyRoutine[today])babyRoutine[today]={};
   babyRoutine[today][id]=!babyRoutine[today][id];
   ss('baby_routine',babyRoutine);renderBabyRoutine();
+}
+function deleteRoutineTask(id){
+  BABY_ROUTINE_TASKS=BABY_ROUTINE_TASKS.filter(t=>t.id!==id);
+  ss('baby_routine_tasks',BABY_ROUTINE_TASKS);renderBabyRoutine();
+}
+function openAddRoutineTask(){
+  document.getElementById('rtName').value='';
+  document.getElementById('rtTime').value='';
+  document.getElementById('rtIcon').value='';
+  document.getElementById('addRoutineDialog').classList.add('open');
+  setTimeout(()=>document.getElementById('rtName').focus(),100);
+}
+function saveRoutineTask(){
+  const name=document.getElementById('rtName').value.trim();
+  if(!name)return;
+  const task={id:uid(),label:name,time:document.getElementById('rtTime').value.trim()||'',icon:document.getElementById('rtIcon').value.trim()||'✅'};
+  BABY_ROUTINE_TASKS.push(task);
+  ss('baby_routine_tasks',BABY_ROUTINE_TASKS);
+  closeDialog('addRoutineDialog');renderBabyRoutine();
+}
+async function aiGenerateRoutine(){
+  if(!apiKey){showKeyModal();return;}
+  const age=getBabyAge(babySettings.birthdate);
+  const btn=document.querySelector('[onclick="aiGenerateRoutine()"]');
+  if(btn){btn.textContent='⏳';btn.disabled=true;}
+  const prompt=`Create a daily routine for a ${age}-month-old baby girl. Return ONLY valid JSON array:
+[{"id":"morning_feed","label":"Morning Feed","icon":"🍼","time":"7:00 AM"},{"id":"tummy_time","label":"Tummy Time","icon":"🤸","time":"9:00 AM"},...]
+Include 8-10 tasks appropriate for a ${age}-month-old. Include feeds, naps, play, bath, bedtime routine.`;
+  try{
+    const resp=await fetch(`${RAILWAY_URL}/api/ai/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey,messages:[{role:'user',content:prompt}],system:'Return only valid JSON array. No markdown.',max_tokens:600})});
+    const d=await resp.json();
+    if(!resp.ok)throw new Error(d.message||resp.status);
+    const text=d.content?.[0]?.text||'';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const s=clean.indexOf('[');const e=clean.lastIndexOf(']');
+    const tasks=JSON.parse(clean.slice(s,e+1));
+    BABY_ROUTINE_TASKS=tasks;
+    ss('baby_routine_tasks',BABY_ROUTINE_TASKS);
+    renderBabyRoutine();
+  }catch(err){console.error('Routine gen failed:',err);}
+  if(btn){btn.textContent='✨ AI';btn.disabled=false;}
+}
+
+// ── BABY PROFILE ──────────────────────────────────────────────────────────────
+function openBabySettings(){
+  document.getElementById('bsName').value=babySettings.name||'';
+  document.getElementById('bsBirthday').value=babySettings.birthdate||'';
+  document.getElementById('babySettingsDialog').classList.add('open');
+}
+function saveBabyProfile(){
+  const name=document.getElementById('bsName').value.trim();
+  const bd=document.getElementById('bsBirthday').value;
+  if(!name)return;
+  babySettings={...babySettings,name,birthdate:bd};
+  ss('baby_settings',babySettings);
+  closeDialog('babySettingsDialog');
+  renderBaby();
+}
+function renderBabyBirthday(){
+  const el=document.getElementById('babyBirthday');if(!el)return;
+  if(!babySettings.birthdate){el.textContent='';return;}
+  const bd=new Date(babySettings.birthdate);
+  const now=new Date();
+  // Next birthday
+  const nextBd=new Date(now.getFullYear(),bd.getMonth(),bd.getDate());
+  if(nextBd<now)nextBd.setFullYear(now.getFullYear()+1);
+  const daysUntil=Math.ceil((nextBd-now)/(1000*60*60*24));
+  const formatted=bd.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  el.textContent=`🎂 ${formatted} · Birthday in ${daysUntil} day${daysUntil===1?'':'s'}`;
 }
 
 // ── MEDICINE ──────────────────────────────────────────────────────────────────
