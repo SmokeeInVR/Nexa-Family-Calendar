@@ -101,7 +101,7 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 .add-btn { padding:7px 14px; background:var(--amber); border:none; border-radius:6px; color:#000; font-weight:700; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:4px; }
 
 /* DIALOGS */
-.dialog-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200; align-items:flex-end; justify-content:center; }
+.dialog-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:300; align-items:flex-end; justify-content:center; }
 .dialog-overlay.open { display:flex; }
 .dialog-sheet { background:var(--surface); border:1px solid var(--border); border-top:2px solid var(--amber); border-radius:14px 14px 0 0; padding:24px 20px 40px; width:100%; max-width:480px; max-height:80vh; overflow-y:auto; }
 .dialog-title { font-family:'Lora',serif; font-size:16px; font-weight:700; margin-bottom:16px; }
@@ -221,7 +221,19 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
 </head>
 <body>
 
-<!-- No key modal needed - AI powered by Railway -->
+<!-- API KEY MODAL -->
+<div id="keyModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#141414;border:1px solid #2a2a2a;border-top:2px solid #D4A53E;border-radius:12px;padding:26px;max-width:380px;width:100%;">
+    <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:#D4A53E;letter-spacing:2px;margin-bottom:4px;">Family Command Center</div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:13px;color:#999;margin-bottom:18px;line-height:1.6;">Enter your Anthropic API key to activate the AI assistant. Saved in your browser — enter once, works forever.</div>
+    <input id="apiKeyInput" type="password" placeholder="sk-ant-api03-..." style="width:100%;background:rgba(0,0,0,0.5);border:1px solid #2a2a2a;border-radius:6px;padding:10px 12px;color:#fff;font-family:'DM Mono',monospace;font-size:12px;outline:none;margin-bottom:8px;box-sizing:border-box;">
+    <div id="keyErr" style="display:none;font-size:11px;color:#ef4444;margin-bottom:8px;">⚠ Invalid key format — must start with sk-</div>
+    <button onclick="saveKey()" style="width:100%;padding:12px;background:var(--amber);border:none;border-radius:8px;color:#000;font-family:'Lora',serif;font-weight:700;font-size:14px;cursor:pointer;margin-bottom:8px;">Activate</button>
+    <div id="storedKeyHint" style="display:none;font-size:10px;color:rgba(212,165,62,0.5);text-align:center;margin-bottom:6px;"></div>
+    <button onclick="clearKey()" style="display:block;margin:0 auto;background:none;border:none;font-size:10px;color:#444;cursor:pointer;">clear saved key</button>
+    <div style="font-size:10px;color:#333;text-align:center;margin-top:10px;">console.anthropic.com → API Keys</div>
+  </div>
+</div>
 
 <!-- BANNER NOTIFICATION -->
 <div class="banner" id="banner" style="display:none;">
@@ -279,7 +291,7 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
   <div class="header">
     <div class="header-title">Family Command Center</div>
     <div class="header-right">
-      <button class="wall-btn" onclick="toggleWallMode()">🖥 Wall Mode</button>
+      <button onclick="showKeyModal()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-dim);font-size:11px;cursor:pointer;margin-right:4px;">🔑 API Key</button><button class="wall-btn" onclick="toggleWallMode()">🖥 Wall Mode</button>
       <div style="position:relative;" id="notifWrap">
         <button class="notif-bell" onclick="toggleNotifPanel()" id="notifBell">🔔
           <div class="notif-badge" id="notifBadge" style="display:none;"></div>
@@ -397,10 +409,11 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
       <div id="taskSections"></div>
     </div>
     <div class="tasks-footer">
-      <button class="footer-btn primary" onclick="openAddTask('family')">+ Family Task</button>
-      <button class="footer-btn primary" style="background:var(--purple);border-color:var(--purple);" onclick="openAddTask('personal')">+ Personal</button>
-      <button class="footer-btn" onclick="openTemplates()">🔖</button>
-      <button class="footer-btn" onclick="resetDay()">↺</button>
+      <button class="footer-btn primary" onclick="openAddTask('family')" style="flex:1;">+ Family</button>
+      <button class="footer-btn primary" onclick="openAddTask('personal')" style="flex:1;background:#a78bfa;border-color:#a78bfa;">+ Personal</button>
+      <button class="footer-btn primary" onclick="openAddTask('baby')" style="flex:1;background:#60a5fa;border-color:#60a5fa;">+ Baby</button>
+      <button class="footer-btn" onclick="openTemplates()" style="padding:7px 10px;">🔖</button>
+      <button class="footer-btn" onclick="resetDay()" style="padding:7px 10px;">↺</button>
     </div>
   </div>
 
@@ -648,8 +661,23 @@ function escH(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').re
 function uid(){ return Math.random().toString(36).slice(2)+Date.now().toString(36); }
 
 // ══ KEY ══
-function saveKey(){ const v=document.getElementById('apiKeyInput').value.trim(); if(!v.startsWith('sk-')){document.getElementById('keyErr').style.display='block';return;} apiKey=v;localStorage.setItem('fcc_key',v);localStorage.setItem('nexa_api_key',v);document.getElementById('keyModal').classList.remove('open'); }
-function clearKey(){ apiKey='';localStorage.removeItem('fcc_key');document.getElementById('apiKeyInput').value=''; }
+function saveKey(){
+  const v=document.getElementById('apiKeyInput').value.trim();
+  if(!v.startsWith('sk-')){document.getElementById('keyErr').style.display='block';return;}
+  apiKey=v;
+  // Save to all shared key locations
+  localStorage.setItem('fcc_key',v);
+  localStorage.setItem('nexa_api_key',v);
+  localStorage.setItem('nexafit_key',v);
+  localStorage.setItem('nexa_key',v);
+  document.getElementById('keyModal').style.display='none';
+}
+function clearKey(){ apiKey='';localStorage.removeItem('fcc_key');localStorage.removeItem('nexa_api_key');localStorage.removeItem('nexafit_key');localStorage.removeItem('nexa_key');document.getElementById('apiKeyInput').value=''; document.getElementById('keyModal').style.display='flex'; }
+function showKeyModal(){
+  document.getElementById('keyModal').style.display='flex';
+  const hint=document.getElementById('storedKeyHint');
+  if(apiKey&&hint){hint.style.display='block';hint.textContent='Active key: '+apiKey.slice(0,18)+'...';}
+}
 
 // ══ TABS ══
 function switchTab(id, btn){
@@ -801,6 +829,7 @@ function saveBabyNote(){ const txt=document.getElementById('babyNoteInput').valu
 function renderBabyNotes(){ document.getElementById('babyNotesList').innerHTML=babyNotes.slice(0,5).map(n=>`<div class="note-item"><div class="note-meta">${new Date(n.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric'})} · ${fmtTime(n.createdAt)}</div><div class="note-body">${escH(n.content)}</div></div>`).join(''); }
 
 async function loadDevTips(){
+  if(!apiKey){showKeyModal();return;}
   const age=getBabyAge(babySettings.birthdate);
   document.getElementById('devTipsSection').innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-family:'Lora',serif;font-size:13px;color:var(--text-dim);"><div class="spinner"></div> Getting ideas...</div>`;
   try{
@@ -881,6 +910,7 @@ function autoResizeAsk(el){ el.style.height='auto'; el.style.height=Math.min(el.
 function sendAskDirect(q){ document.getElementById('askInput').value=q; sendAsk(); }
 
 async function sendAsk(){
+  if(!apiKey){showKeyModal();return;}
   const inp=document.getElementById('askInput');
   const content=inp.value.trim();
   if(!content||askStreaming)return;
@@ -991,7 +1021,7 @@ function init(){
   renderNotifPanel();
   setInterval(checkNotifications,60000);
   checkNotifications();
-  // AI powered by Railway - no client key needed
+  if(!apiKey) document.getElementById('keyModal').style.display='flex';
 }
 
 init();
