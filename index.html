@@ -292,6 +292,8 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
   <div class="header">
     <div class="header-title">Nexa-Calendar</div>
     <div class="header-right">
+      <button onclick="syncCalToCloud()" id="calSyncBtn" style="background:none;border:1px solid rgba(212,165,62,0.3);border-radius:6px;padding:5px 10px;color:#d4a53e;font-size:11px;cursor:pointer;font-family:inherit;" title="Save to cloud">☁ Save</button>
+      <button onclick="loadCalFromCloud()" style="background:none;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:5px 10px;color:#888;font-size:11px;cursor:pointer;font-family:inherit;" title="Load from cloud">⬇ Sync</button>
       <button onclick="showKeyModal()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-dim);font-size:11px;cursor:pointer;margin-right:4px;">🔑 API Key</button><button class="wall-btn" onclick="toggleWallMode()">🖥 Wall Mode</button>
       <div style="position:relative;" id="notifWrap">
         <button class="notif-bell" onclick="toggleNotifPanel()" id="notifBell">🔔
@@ -1451,6 +1453,54 @@ function init(){
 }
 
 init();
+
+// ══ CLOUD SYNC ══
+const CAL_SYNC_URL =  + RAILWAY + ;
+const CAL_FAMILY_ID = localStorage.getItem('nexa_family_id')||'nexa_family';
+
+async function syncCalToCloud(){
+  const btn = document.getElementById('calSyncBtn');
+  if(btn){ btn.textContent='☁ Saving...'; btn.style.color='#d4a53e'; }
+  try{
+    // Collect all app state
+    const data = {};
+    const keys = ['fcc_tasks','fcc_baby','fcc_meals','fcc_calendar','fcc_notifications','fcc_reminders'];
+    keys.forEach(k=>{ const v=localStorage.getItem(k); if(v) data[k]=JSON.parse(v); });
+    // Also grab any nexa_ prefixed keys
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('fcc_')){ try{ data[k]=JSON.parse(localStorage.getItem(k)||'null'); }catch(e){} }
+    }
+    await fetch(`${CAL_SYNC_URL}/api/sync/save`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({familyId:CAL_FAMILY_ID, appName:'nexa_calendar', data})
+    });
+    if(btn){ btn.textContent='☁ Saved ✓'; setTimeout(()=>{ btn.textContent='☁ Save'; },2000); }
+  }catch(e){
+    if(btn){ btn.textContent='☁ Failed'; setTimeout(()=>{ btn.textContent='☁ Save'; },2000); }
+  }
+}
+
+async function loadCalFromCloud(){
+  try{
+    const res = await fetch(`${CAL_SYNC_URL}/api/sync/load?familyId=${CAL_FAMILY_ID}&appName=nexa_calendar`);
+    if(!res.ok) return;
+    const d = await res.json();
+    if(!d?.data) return;
+    Object.entries(d.data).forEach(([k,v])=>{ if(v) localStorage.setItem(k, JSON.stringify(v)); });
+    // Trigger re-render
+    if(typeof loadAllData==='function') loadAllData();
+    else if(typeof init==='function') init();
+    else location.reload();
+  }catch(e){ alert('Sync failed: '+e.message); }
+}
+
+// Auto-save when data changes — debounced
+let calSyncTimer=null;
+function autoSyncCal(){ clearTimeout(calSyncTimer); calSyncTimer=setTimeout(syncCalToCloud, 3000); }
+
+// Auto-load on startup
+window.addEventListener('load', ()=>{ setTimeout(loadCalFromCloud, 1500); });
 </script>
 </body>
 </html>
