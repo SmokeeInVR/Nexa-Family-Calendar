@@ -292,6 +292,8 @@ body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif
   <div class="header">
     <div class="header-title">Nexa-Calendar</div>
     <div class="header-right">
+      <button onclick="syncCalToCloud()" id="calSyncBtn" style="background:none;border:1px solid rgba(212,165,62,0.3);border-radius:6px;padding:5px 10px;color:#d4a53e;font-size:11px;cursor:pointer;font-family:inherit;" title="Save to cloud">☁ Save</button>
+      <button onclick="loadCalFromCloud()" style="background:none;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:5px 10px;color:#888;font-size:11px;cursor:pointer;font-family:inherit;" title="Load from cloud">⬇ Sync</button>
       <button onclick="showKeyModal()" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;background:none;color:var(--text-dim);font-size:11px;cursor:pointer;margin-right:4px;">🔑 API Key</button><button class="wall-btn" onclick="toggleWallMode()">🖥 Wall Mode</button>
       <div style="position:relative;" id="notifWrap">
         <button class="notif-bell" onclick="toggleNotifPanel()" id="notifBell">🔔
@@ -1451,6 +1453,78 @@ function init(){
 }
 
 init();
+
+// ══ CLOUD SYNC ══
+function showCalToast(msg){
+  let t=document.getElementById('calSyncToast');
+  if(!t){ t=document.createElement('div'); t.id='calSyncToast'; t.style.cssText='position:fixed;top:60px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid var(--amber);border-radius:8px;padding:8px 16px;font-size:12px;color:var(--amber);z-index:999;display:none;font-family:monospace;letter-spacing:1px;white-space:nowrap;'; document.body.appendChild(t); }
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none', 2500);
+}
+
+const CAL_SYNC_URL =  + RAILWAY + ;
+const CAL_FAMILY_ID = localStorage.getItem('nexa_family_id')||'nexa_family';
+
+async function syncCalToCloud(){
+  const btn = document.getElementById('calSyncBtn');
+  if(btn) btn.textContent='☁ Saving...';
+  try{
+    const data = {};
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('fcc_')){
+        try{ data[k]=JSON.parse(localStorage.getItem(k)); }
+        catch(e){ data[k]=localStorage.getItem(k); }
+      }
+    }
+    await fetch(`${CAL_SYNC_URL}/api/sync/save`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({familyId:CAL_FAMILY_ID, appName:'nexa_calendar', data})
+    });
+    showCalToast('☁ Saved to cloud ✓');
+    if(btn) btn.textContent='☁ Save';
+  }catch(e){
+    showCalToast('⚠ Save failed: '+e.message);
+    if(btn) btn.textContent='☁ Save';
+  }
+}
+
+
+async function loadCalFromCloud(){
+  try{
+    const res = await fetch(`${CAL_SYNC_URL}/api/sync/load?familyId=${CAL_FAMILY_ID}&appName=nexa_calendar`);
+    if(!res.ok){ showCalToast('No cloud data found yet — Save first'); return; }
+    const d = await res.json();
+    if(!d?.data){ showCalToast('No cloud data found'); return; }
+    // Restore all fcc_ keys from cloud safely
+    Object.entries(d.data).forEach(([k,v])=>{
+      if(v!==null && v!==undefined) localStorage.setItem(k, typeof v==='string'?v:JSON.stringify(v));
+    });
+    // Reload state variables without page reload
+    events=ls('events')||[];
+    tasks=ls('tasks')||[];
+    naps=ls('naps')||[];
+    activeNap=ls('active_nap')||null;
+    moods=ls('moods')||[];
+    babyNotes=ls('baby_notes')||[];
+    dinner=ls('tonights_dinner')||'';
+    feedingLog=ls('feeding_log')||[];
+    medicineLog=ls('medicine_log')||[];
+    milestones=ls('milestones')||[];
+    babySettings=ls('baby_settings')||{name:'Lily',birthdate:'2025-03-05'};
+    babyRoutine=ls('baby_routine')||{};
+    // Re-render current tab safely
+    renderToday();
+    renderNotifPanel();
+    showCalToast('⬇ Synced from cloud ✓');
+  }catch(e){ showCalToast('⚠ Sync failed: '+e.message); }
+}
+
+// Auto-save when data changes — debounced
+let calSyncTimer=null;
+function autoSyncCal(){ clearTimeout(calSyncTimer); calSyncTimer=setTimeout(syncCalToCloud, 3000); }
+
+// Cloud sync available via ☁ Save and ⬇ Sync buttons in header
 </script>
 </body>
 </html>
