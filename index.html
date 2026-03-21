@@ -842,6 +842,7 @@ function switchTab(id, btn){
   document.querySelectorAll('.panel').forEach(p=>{p.classList.remove('active');p.style.display='none';});
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   const panelEl = document.getElementById('panel-'+id);
+  if(!panelEl) return; // safety check
   panelEl.classList.add('active');
   panelEl.style.display='flex';
   const nb = btn||document.getElementById('nav-'+id);
@@ -858,10 +859,14 @@ function startClock(){
   function tick(){
     const now=new Date();
     const h=now.getHours();
-    document.getElementById('todayGreeting').textContent=h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
-    document.getElementById('todayDate').textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
-    document.getElementById('todayTime').textContent=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
-    document.getElementById('wedBannerToday').style.display=now.getDay()===3?'block':'none';
+    const greet=document.getElementById('todayGreeting');
+    const date=document.getElementById('todayDate');
+    const time=document.getElementById('todayTime');
+    const wed=document.getElementById('wedBannerToday');
+    if(greet) greet.textContent=h<12?'Good Morning':h<17?'Good Afternoon':'Good Evening';
+    if(date) date.textContent=now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    if(time) time.textContent=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true});
+    if(wed) wed.style.display=now.getDay()===3?'block':'none';
   }
   tick(); setInterval(tick,1000);
 }
@@ -1442,7 +1447,6 @@ function closeDialog(id){ document.getElementById(id).classList.remove('open'); 
 // ══ BOOT ══
 function init(){
   ensureBabyTasks();
-  // Initial push on load
   setTimeout(pushFamilyToRailway, 2000);
   startClock();
   renderToday();
@@ -1452,7 +1456,12 @@ function init(){
   if(!apiKey) document.getElementById('keyModal').style.display='flex';
 }
 
-init();
+// Run after DOM is fully ready
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
 
 // ══ CLOUD SYNC ══
 function showCalToast(msg){
@@ -1462,7 +1471,7 @@ function showCalToast(msg){
   clearTimeout(t._timer); t._timer=setTimeout(()=>t.style.display='none', 2500);
 }
 
-const CAL_SYNC_URL =  + RAILWAY + ;
+const CAL_SYNC_URL = 'https://nexa-finance-production.up.railway.app';
 const CAL_FAMILY_ID = localStorage.getItem('nexa_family_id')||'nexa_family';
 
 async function syncCalToCloud(){
